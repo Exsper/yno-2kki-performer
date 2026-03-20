@@ -9,7 +9,6 @@
 // @homepage     https://github.com/Exsper/yno-2kki-performer#readme
 // @supportURL   https://github.com/Exsper/yno-2kki-performer/issues
 // @match        https://ynoproject.net/2kki/
-// @require      https://cdn.staticfile.org/jquery/2.1.3/jquery.min.js
 // @license      MIT License
 // @grant        none
 // @run-at       document-end
