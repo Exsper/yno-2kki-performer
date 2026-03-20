@@ -1061,8 +1061,10 @@ function init() {
     });
     $file.hide();
     let $songText = $("<textarea>", { id: "y2p-song", style: "min-height: 80px;" }).appendTo($mainDiv);
+    $("<br>").appendTo($mainDiv);
     $("<span>", { id: "y2p-dp-label", text: "整体音调调节: " }).appendTo($mainDiv);
     let $dpBox = $("<input>", { type: "text", id: "y2p-dp", val: "0", style: "width:30px;align-self:center;" }).appendTo($mainDiv);
+    $("<br>").appendTo($mainDiv);
     $("<span>", { id: "y2p-bpm-label", text: "BPM: " }).appendTo($mainDiv);
     let $bpmBox = $("<input>", { type: "text", id: "y2p-bpm", val: "120", style: "width:30px;align-self:center;" }).appendTo($mainDiv);
     $textTypeSelect.on("change", () => {
@@ -1074,8 +1076,6 @@ function init() {
             $("#y2p-song").hide();
             $("#y2p-bpm-label").hide();
             $("#y2p-bpm").hide();
-            $("#y2p-dp-label").hide();
-            $("#y2p-dp").hide();
         }
         else {
             $("#y2p-file").hide();
@@ -1085,12 +1085,17 @@ function init() {
             $("#y2p-song").show();
             $("#y2p-bpm-label").show();
             $("#y2p-bpm").show();
-            if ($textTypeSelect.val() === "je") {
-                $("#y2p-dp-label").show();
-                $("#y2p-dp").show();
-            }
+        }
+        if ($textTypeSelect.val() === "je") {
+            $("#y2p-dp-label").show();
+            $("#y2p-dp").show();
+        }
+        else {
+            $("#y2p-dp-label").hide();
+            $("#y2p-dp").hide();
         }
     });
+    $("<br>").appendTo($mainDiv);
     let $checkButton = $('<button>', { type: "button", text: "开始演奏", id: "y2p-play", style: "width:fit-content;align-self:center;" }).appendTo($mainDiv);
     $checkButton.click(async () => {
         if (stopped) {
