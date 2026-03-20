@@ -1,8 +1,10 @@
 # YNOproject Yume2kki Performer
 
+For English, see [README.en.md](README.en.md)
+
 可以根据给定乐谱自动演奏乐曲。
 
-## 使用本脚本前，请确保脚本设置与游戏中的按键模式相匹配（Shift+Z+X+→）
+## 使用本脚本前，请确保游戏中的按键模式为A模式（钢琴窗设置：Shift+Z+X+→）
 
 ## 原理
 

@@ -2,7 +2,7 @@
 // @name         YNOproject Yume2kki Performer
 // @name:zh-CN   YNOproject Yume2kki 演奏家
 // @namespace    https://github.com/Exsper/
-// @version      0.0.1
+// @version      0.0.2
 // @description  Music can be played automatically based on the given score.
 // @description:zh-CN  可以根据给定乐谱自动演奏乐曲。
 // @author       Exsper
@@ -23,6 +23,60 @@ const Allow_Exceed_Range_low = 2;
 // 在高于最高音调（B5）多少半音的音符用最高音调弹奏，再高则忽略该音符
 const Allow_Exceed_Range_high = 2;
 
+// 语言资源
+const locales = {
+    zh: {
+        openTitle: "显示窗口",
+        closeTitle: "隐藏窗口",
+        statDefault: "请在打开钢琴窗后点击“开始演奏”",
+        typeStandard: "标准音符",
+        typeJE: "JE谱",
+        typeMIDI: "MIDI",
+        pitchLabel: "整体音调调节: ",
+        bpmLabel: "BPM: ",
+        loopLabel: "循环演奏",
+        playBtn: "开始演奏",
+        stopBtn: "停止演奏",
+        conflictLabel: "音符冲突处理：",
+        conflictAll: "全部弹奏",
+        conflictHigh: "取高音",
+        conflictLow: "取低音",
+        conflictMiddle: "取接近F4的音",
+        tableTrack: "演奏音轨",
+        tablePlayableCount: "可演奏音符数",
+        tablePlayableLength: "可演奏长度",
+        alertUnsupported: "不支持演奏该MIDI音乐",
+        langSwitchLabel: "语言: "
+    },
+    en: {
+        openTitle: "Show Panel",
+        closeTitle: "Hide Panel",
+        statDefault: "Please open the piano window and click 'Play'",
+        typeStandard: "Standard",
+        typeJE: "JE Score",
+        typeMIDI: "MIDI",
+        pitchLabel: "Overall pitch shift: ",
+        bpmLabel: "BPM: ",
+        loopLabel: "Loop",
+        playBtn: "Play",
+        stopBtn: "Stop",
+        conflictLabel: "Conflict resolution: ",
+        conflictAll: "Play all",
+        conflictHigh: "Higher pitch",
+        conflictLow: "Lower pitch",
+        conflictMiddle: "Nearest to F4",
+        tableTrack: "Track",
+        tablePlayableCount: "Playable notes",
+        tablePlayableLength: "Playable length",
+        alertUnsupported: "This MIDI is not supported",
+        langSwitchLabel: "Language: "
+    }
+};
+
+let currentLang = 'zh'; // 默认中文，可根据需要改为 'en'
+if (navigator.language.startsWith('zh')) currentLang = 'zh';
+else currentLang = 'en';
+
 // 全局变量，不能修改
 let isLoop = false;
 let stopped = true;
@@ -33,13 +87,13 @@ let midiData = null;
  * Shift = #+1; Z = #+7; X = #+12;
  */
 let sKeys = {
-    Shift: {key: "ShiftLeft", keyCode: 16},
-    Z: {key: "KeyZ", keyCode: 90},
-    X: {key: "KeyX", keyCode: 88},
-    Left: {key: "ArrowLeft", keyCode: 37},
-    Up: {key: "ArrowUp", keyCode: 38},
-    Right: {key: "ArrowRight", keyCode: 39},
-    Down: {key: "ArrowDown", keyCode: 40},
+    Shift: { key: "ShiftLeft", keyCode: 16 },
+    Z: { key: "KeyZ", keyCode: 90 },
+    X: { key: "KeyX", keyCode: 88 },
+    Left: { key: "ArrowLeft", keyCode: 37 },
+    Up: { key: "ArrowUp", keyCode: 38 },
+    Right: { key: "ArrowRight", keyCode: 39 },
+    Down: { key: "ArrowDown", keyCode: 40 },
 }
 
 /**
@@ -48,15 +102,15 @@ let sKeys = {
  * 为兼容后续代码，直接修改按键内容，不修改按键名称，后续代码依旧按TypeA按键设置的逻辑进行处理
  */
 function switch2TypeB() {
-    sKeys.Shift = {key: "KeyZ", keyCode: 90};
-    sKeys.Z = {key: "KeyX", keyCode: 88};
-    sKeys.X = {key: "ShiftLeft", keyCode: 16};
+    sKeys.Shift = { key: "KeyZ", keyCode: 90 };
+    sKeys.Z = { key: "KeyX", keyCode: 88 };
+    sKeys.X = { key: "ShiftLeft", keyCode: 16 };
 }
 
 function switch2TypeA() {
-    sKeys.Shift = {key: "ShiftLeft", keyCode: 16};
-    sKeys.Z = {key: "KeyZ", keyCode: 90};
-    sKeys.X = {key: "KeyX", keyCode: 88};
+    sKeys.Shift = { key: "ShiftLeft", keyCode: 16 };
+    sKeys.Z = { key: "KeyZ", keyCode: 90 };
+    sKeys.X = { key: "KeyX", keyCode: 88 };
 }
 
 /**
@@ -147,7 +201,7 @@ async function playSong(song, bpm) {
     for (let i = 0; i < keys.length; i++) {
         let keyData = getKeyData(keys[i]);
         if (keyData.length > 0) {
-            for(let j = 0; j < keyData.length; j++) {
+            for (let j = 0; j < keyData.length; j++) {
                 window.simulateKeyboardInput(keyData[j].key, keyData[j].keyCode);
             }
         }
@@ -165,20 +219,20 @@ async function playSong(song, bpm) {
         await wait(interval / 2);
     }
     if (stopped) {
-        $("#y2p-play").text("开始演奏");
+        $("#y2p-play").text(locales[currentLang].playBtn);
         return;
     }
     if (isLoop) await playSong(song, bpm);
     else {
         stopped = true;
-        $("#y2p-play").text("开始演奏");
+        $("#y2p-play").text(locales[currentLang].playBtn);
     }
 }
 
 // 测试用
 function testSong() {
     let song = [];
-    for(let i = 1; i <= 25; i++) {
+    for (let i = 1; i <= 25; i++) {
         song.push(i.toString());
     }
     playSong(song.join(" "), 120);
@@ -958,7 +1012,7 @@ async function playMIDI(trackIndexs, keyConflictMethod = "all") {
     if (!keyInfo) {
         alert("不支持演奏该MIDI音乐");
         stopped = true;
-        $("#y2p-play").text("开始演奏");
+        $("#y2p-play").text(locales[currentLang].playBtn);
         return;
     }
     let intervalList = keyInfo.intervalList;
@@ -974,7 +1028,7 @@ async function playMIDI(trackIndexs, keyConflictMethod = "all") {
 
         let keyData = getKeyData(keyList[i].toString());
         if (keyData.length > 0) {
-            for(let j = 0; j < keyData.length; j++) {
+            for (let j = 0; j < keyData.length; j++) {
                 window.simulateKeyboardInput(keyData[j].key, keyData[j].keyCode);
             }
         }
@@ -997,25 +1051,36 @@ async function playMIDI(trackIndexs, keyConflictMethod = "all") {
             }
         }
     }
-    $("#y2p-play").text("开始演奏");
+    $("#y2p-play").text(locales[currentLang].playBtn);
     return;
 }
 
 
 
 function init() {
-    let $openButton = $('<button>', { text: "+", id: "y2p-open", style: "float:left;top:50%;position:absolute;left:0%;", title: "显示窗口" }).appendTo($("body"));
+    let $openButton = $('<button>', { text: "+", id: "y2p-open", style: "float:left;top:50%;position:absolute;left:0%;", title: locales[currentLang].openTitle }).appendTo($("body"));
     $openButton.click(() => {
         $("#y2p-div").show();
         $("#y2p-open").hide();
     });
     let $mainDiv = $("<div>", { id: "y2p-div", class: "container", style: "top:50%;left:0%;transform: translate(0, -50%);width:200px;position:absolute;text-align:center;z-index:999;height:auto;max-height:70vh;min-height:160px;overflow:hidden;border-top: 24px double #000000 !important;padding-top: 0px !important;" });
     $mainDiv.hide();
-    let $statLabel = $("<span>", { id: "y2p-stat", text: "请在打开钢琴窗后点击“开始演奏”", style: "display: block; padding: 6px;" }).appendTo($mainDiv);
+    // 语言切换
+    let $langSelectLabel = $("<span>", { id: "y2p-lang-select-label", text: "Language: ", style: "padding: 6px;" }).appendTo($mainDiv);
+    let $langSelect = $("<select>", { id: "y2p-lang-select", style: "margin-right: 8px;" });
+    $langSelect.append($('<option></option>').attr('value', 'zh').text('中文'));
+    $langSelect.append($('<option></option>').attr('value', 'en').text('English'));
+    $langSelect.val(currentLang);
+    $langSelect.change(function () {
+        currentLang = $(this).val();
+        refreshUILanguage(); // 刷新所有动态文本
+    });
+    $langSelect.appendTo($mainDiv);
+    let $statLabel = $("<span>", { id: "y2p-stat", text: locales[currentLang].statDefault, style: "display: block; padding: 6px;" }).appendTo($mainDiv);
     let $textTypeSelect = $("<select>", { id: "y2p-select-type" }).appendTo($mainDiv);
-    $textTypeSelect.append($('<option></option>').attr('value', '0').text('标准音符'));
-    $textTypeSelect.append($('<option></option>').attr('value', 'je').text('JE谱'));
-    $textTypeSelect.append($('<option></option>').attr('value', 'midi').text('MIDI'));
+    $textTypeSelect.append($('<option></option>').attr('value', '0').text(locales[currentLang].typeStandard));
+    $textTypeSelect.append($('<option></option>').attr('value', 'je').text(locales[currentLang].typeJE));
+    $textTypeSelect.append($('<option></option>').attr('value', 'midi').text(locales[currentLang].typeMIDI));
     $textTypeSelect.val("0");
     let $file = $("<input>", { type: "file", id: "y2p-file", style: "font-size: 10px; align-self: center; display: inline-block;" }).appendTo($mainDiv);
     $file.on("change", () => {
@@ -1031,16 +1096,16 @@ function init() {
                 $mainTable.empty();
                 let midiInfo = ReadMIDIInfo();
                 if (!midiInfo || midiInfo.length <= 0) {
-                    alert("不支持演奏该MIDI音乐");
+                    alert(locales[currentLang].alertUnsupported);
                     return;
                 }
                 let $ltr = $("<tr>", { style: "width:100%;" });
                 let $ltd = $("<td>", { style: "width:30%" }).appendTo($ltr);
-                $("<span>", { text: "演奏音轨" }).appendTo($ltd);
+                $("<span>", { text: locales[currentLang].tableTrack }).appendTo($ltd);
                 $ltd = $("<td>", { style: "width:35%" }).appendTo($ltr);
-                $("<span>", { text: "可演奏音符数" }).appendTo($ltd);
+                $("<span>", { text: locales[currentLang].tablePlayableCount }).appendTo($ltd);
                 $ltd = $("<td>", { style: "width:35%" }).appendTo($ltr);
-                $("<span>", { text: "可演奏长度" }).appendTo($ltd);
+                $("<span>", { text: locales[currentLang].tablePlayableLength }).appendTo($ltd);
                 $ltr.appendTo($mainTable);
                 midiInfo.map((trackInfo, index) => {
                     $ltr = $("<tr>");
@@ -1062,10 +1127,10 @@ function init() {
     $file.hide();
     let $songText = $("<textarea>", { id: "y2p-song", style: "min-height: 80px;" }).appendTo($mainDiv);
     $("<br>").appendTo($mainDiv);
-    $("<span>", { id: "y2p-dp-label", text: "整体音调调节: " }).appendTo($mainDiv);
-    let $dpBox = $("<input>", { type: "text", id: "y2p-dp", val: "0", style: "width:30px;align-self:center;" }).appendTo($mainDiv);
+    $("<span>", { id: "y2p-dp-label", text: locales[currentLang].pitchLabel }).hide().appendTo($mainDiv);
+    let $dpBox = $("<input>", { type: "text", id: "y2p-dp", val: "0", style: "width:30px;align-self:center;" }).hide().appendTo($mainDiv);
     $("<br>").appendTo($mainDiv);
-    $("<span>", { id: "y2p-bpm-label", text: "BPM: " }).appendTo($mainDiv);
+    $("<span>", { id: "y2p-bpm-label", text: locales[currentLang].bpmLabel }).appendTo($mainDiv);
     let $bpmBox = $("<input>", { type: "text", id: "y2p-bpm", val: "120", style: "width:30px;align-self:center;" }).appendTo($mainDiv);
     $textTypeSelect.on("change", () => {
         if ($textTypeSelect.val() === "midi") {
@@ -1096,11 +1161,11 @@ function init() {
         }
     });
     $("<br>").appendTo($mainDiv);
-    let $checkButton = $('<button>', { type: "button", text: "开始演奏", id: "y2p-play", style: "width:fit-content;align-self:center;" }).appendTo($mainDiv);
+    let $checkButton = $('<button>', { type: "button", text: locales[currentLang].playBtn, id: "y2p-play", style: "width:fit-content;align-self:center;" }).appendTo($mainDiv);
     $checkButton.click(async () => {
         if (stopped) {
             stopped = false;
-            $checkButton.text("停止演奏");
+            $checkButton.text(locales[currentLang].stopBtn);
             if ($("#y2p-select-type").val() === "midi") {
                 let tracks = [];
                 let $checkedTrack = $(".y2p-track:checked");
@@ -1118,14 +1183,14 @@ function init() {
         }
         else {
             stopped = true;
-            $checkButton.text("开始演奏");
+            $checkButton.text(locales[currentLang].playBtn);
         }
     });
     let $titleDiv = $("<div>", { id: "y2p-title", style: "width: 100%; display: flex;" }).prependTo($mainDiv);
     let $rightDiv = $("<div>", { id: "y2p-title-right", style: "display: flex; justify-content: right;" }).prependTo($titleDiv);
     let $leftDiv = $("<div>", { id: "y2p-title-left", style: "width: 100%; display: flex; justify-content: left;" }).prependTo($titleDiv);
     let $loopCheckBox = $("<input>", { type: "checkbox", id: "y2p-loop" }).appendTo($leftDiv);
-    $("<label>").attr({ for: "y2p-loop" }).text("循环演奏").appendTo($leftDiv);
+    $("<label>").attr({ for: "y2p-loop" }).text(locales[currentLang].loopLabel).appendTo($leftDiv);
     $loopCheckBox.change(() => {
         if ($loopCheckBox.prop("checked")) {
             isLoop = true;
@@ -1133,26 +1198,81 @@ function init() {
             isLoop = false;
         }
     });
-    let $closeButton = $('<button>', { text: "-", id: "y2p-close", title: "隐藏窗口" }).appendTo($rightDiv);
+    let $closeButton = $('<button>', { text: "-", id: "y2p-close", title: locales[currentLang].closeTitle }).appendTo($rightDiv);
     $closeButton.click(() => {
         $("#y2p-div").hide();
         $("#y2p-open").show();
     });
     let $mainTable = $("<table>", { id: "y2p-table", style: "table-layout:fixed; width:100%; word-wrap: break-word;" }).appendTo($mainDiv);
     $mainTable.hide();
-    let $keyConflictMethodLabel = $("<span>", { id: "y2p-select-conflict-label", text: "音符冲突处理：" }).appendTo($mainDiv);
+    let $keyConflictMethodLabel = $("<span>", { id: "y2p-select-conflict-label", text: locales[currentLang].conflictLabel }).appendTo($mainDiv);
     $keyConflictMethodLabel.hide();
     let $keyConflictMethodSelect = $("<select>", { id: "y2p-select-conflict" }).appendTo($mainDiv);
-    $keyConflictMethodSelect.append($('<option></option>').attr('value', 'all').text('全部弹奏'));
-    $keyConflictMethodSelect.append($('<option></option>').attr('value', 'high').text('取高音'));
-    $keyConflictMethodSelect.append($('<option></option>').attr('value', 'low').text('取低音'));
-    $keyConflictMethodSelect.append($('<option></option>').attr('value', 'middle').text('取接近F4的音'));
+    $keyConflictMethodSelect.append($('<option></option>').attr('value', 'all').text(locales[currentLang].conflictAll));
+    $keyConflictMethodSelect.append($('<option></option>').attr('value', 'high').text(locales[currentLang].conflictHigh));
+    $keyConflictMethodSelect.append($('<option></option>').attr('value', 'low').text(locales[currentLang].conflictLow));
+    $keyConflictMethodSelect.append($('<option></option>').attr('value', 'middle').text(locales[currentLang].conflictMiddle));
     $keyConflictMethodSelect.val("all");
     $keyConflictMethodSelect.hide();
 
     $mainDiv.appendTo($("body"));
 }
 
+function refreshUILanguage() {
+    // 更新静态元素
+    $("#y2p-open").attr("title", locales[currentLang].openTitle);
+    $("#y2p-close").attr("title", locales[currentLang].closeTitle);
+    $("#y2p-stat").text(locales[currentLang].statDefault);
+    $("#y2p-select-type option").each(function () {
+        let val = $(this).val();
+        if (val === '0') $(this).text(locales[currentLang].typeStandard);
+        else if (val === 'je') $(this).text(locales[currentLang].typeJE);
+        else if (val === 'midi') $(this).text(locales[currentLang].typeMIDI);
+    });
+    $("#y2p-dp-label").text(locales[currentLang].pitchLabel);
+    $("#y2p-bpm-label").text(locales[currentLang].bpmLabel);
+    $("label[for='y2p-loop']").text(locales[currentLang].loopLabel);
+    $("#y2p-play").text(locales[currentLang].playBtn);
+    $("#y2p-select-conflict-label").text(locales[currentLang].conflictLabel);
+    $("#y2p-select-conflict option").each(function () {
+        let val = $(this).val();
+        if (val === 'all') $(this).text(locales[currentLang].conflictAll);
+        else if (val === 'high') $(this).text(locales[currentLang].conflictHigh);
+        else if (val === 'low') $(this).text(locales[currentLang].conflictLow);
+        else if (val === 'middle') $(this).text(locales[currentLang].conflictMiddle);
+    });
+
+    // 如果当前显示 MIDI 表格且已加载数据，则重新生成表格
+    if ($("#y2p-select-type").val() === "midi" && midiData) {
+        // 重新生成表格（类似 $file.on("change") 中的表格生成逻辑）
+        let $mainTable = $("#y2p-table");
+        $mainTable.empty();
+        let midiInfo = ReadMIDIInfo();
+        if (midiInfo && midiInfo.length > 0) {
+            let $ltr = $("<tr>", { style: "width:100%;" });
+            let $ltd = $("<td>", { style: "width:30%" }).appendTo($ltr);
+            $("<span>", { text: locales[currentLang].tableTrack }).appendTo($ltd);
+            $ltd = $("<td>", { style: "width:35%" }).appendTo($ltr);
+            $("<span>", { text: locales[currentLang].tablePlayableCount }).appendTo($ltd);
+            $ltd = $("<td>", { style: "width:35%" }).appendTo($ltr);
+            $("<span>", { text: locales[currentLang].tablePlayableLength }).appendTo($ltd);
+            $ltr.appendTo($mainTable);
+            midiInfo.forEach((trackInfo, index) => {
+                $ltr = $("<tr>");
+                $ltd = $("<td>").appendTo($ltr);
+                let $trackCheckbox = $("<input>", { type: "checkbox", class: "y2p-track", track: trackInfo.index }).appendTo($ltd);
+                if (index === 0) $trackCheckbox.prop("checked", true);
+                $ltd = $("<td>").appendTo($ltr);
+                $("<span>", { text: trackInfo.playableNoteCount }).appendTo($ltd);
+                $ltd = $("<td>").appendTo($ltr);
+                $("<span>", { text: trackInfo.playableNoteLength }).appendTo($ltd);
+                $ltr.appendTo($mainTable);
+            });
+        } else {
+            // 没有可演奏轨道时的处理
+        }
+    }
+}
 
 
 function check() {
