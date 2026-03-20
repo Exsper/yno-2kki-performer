@@ -24,7 +24,6 @@ const Allow_Exceed_Range_low = 2;
 const Allow_Exceed_Range_high = 2;
 
 // 全局变量，不能修改
-let nowGroup = "";
 let isLoop = false;
 let stopped = true;
 let midiData = null;
@@ -955,7 +954,6 @@ function MIDI2Song(trackIndexs, keyConflictMethod = "all") {
 }
 
 async function playMIDI(trackIndexs, keyConflictMethod = "all") {
-    nowGroup = "";
     let keyInfo = MIDI2Song(trackIndexs, keyConflictMethod);
     if (!keyInfo) {
         alert("不支持演奏该MIDI音乐");
@@ -990,7 +988,6 @@ async function playMIDI(trackIndexs, keyConflictMethod = "all") {
         if (i >= keyList.length) {
             if (isLoop) {
                 i = 0;
-                nowGroup = "";
                 await wait(endWaitTime);
                 continue;
             }
