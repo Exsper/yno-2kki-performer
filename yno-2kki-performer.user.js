@@ -245,7 +245,7 @@ function JE2Song(text, dp = 0) {
     let pitch = 13;
     let song = [];
     const note = ["1", "#1", "2", "#2", "3", "4", "#4", "5", "#5", "6", "#6", "7"];
-    while (n < text.length) {
+    if (n < text.length) {
         while (n < text.length) {
             for (; n < text.length; n++) {              //音高
                 if (text[n] === '[' || text[n] === ')') pitch += 12;
