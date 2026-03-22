@@ -2,7 +2,7 @@
 // @name         YNOproject Yume2kki Performer
 // @name:zh-CN   YNOproject Yume2kki 演奏家
 // @namespace    https://github.com/Exsper/
-// @version      0.0.4
+// @version      0.0.5
 // @description  Music can be played automatically based on the given score.
 // @description:zh-CN  可以根据给定乐谱自动演奏乐曲。
 // @author       Exsper
@@ -200,6 +200,7 @@ async function playSong(song, bpm) {
     if (bpmnum <= 10 || bpmnum > 1200) bpmnum = 60;
     let interval = 60 / bpmnum * 1000;
     let keys = song.split(" ");
+    if (keys.length == 0) return;
     stopped = false;
     for (let i = 0; i < keys.length; i++) {
         let keyData = getKeyData(keys[i]);
@@ -249,7 +250,8 @@ function JE2Song(text, dp = 0) {
     let pitch = 13;
     let song = [];
     const note = ["1", "#1", "2", "#2", "3", "4", "#4", "5", "#5", "6", "#6", "7"];
-    if (n < text.length) {
+    if (text.length == 0) return "";
+    while (n < text.length) {
         while (n < text.length) {
             for (; n < text.length; n++) {              //音高
                 if (text[n] === '[' || text[n] === ')') pitch += 12;
