@@ -15,11 +15,15 @@
 // ==/UserScript==
 
 // 自定义设置，可以修改
+// Custom settings, can be modified
 // 同时音符之间演奏最短延迟，设置过小可能无法及时切换音调导致弹错音符
+// Minimum delay between simultaneous notes; setting it too low may cause the pitch to not switch in time, resulting in wrong notes
 const Same_Time_Interval = 40;
 // 在低于最低音调（C3）多少半音的音符用最低音调弹奏，再低则忽略该音符
+// For notes below the lowest pitch (C3), use the lowest pitch if within this many semitones; otherwise ignore the note
 const Allow_Exceed_Range_low = 2;
 // 在高于最高音调（C5）多少半音的音符用最高音调弹奏，再高则忽略该音符
+// For notes above the highest pitch (C5), use the highest pitch if within this many semitones; otherwise ignore the note
 const Allow_Exceed_Range_high = 2;
 
 // 语言资源
@@ -1002,12 +1006,12 @@ class midi {
 
 // ---------------------------------------------------------------------------------------
 
-// 把序号转换为音符，越界为0
+// 把midi序号转换为音符，越界为0
 function indexToKey(index) {
-    index = index - 60;
-    if (index <= -12) return 0;
-    if (index >= 14) return 0;
-    return index + 12;
+    index = index - 47;  // midi file: C3=48; script key: C3=1; script range: 1~25
+    if (index <= 0) return 0;
+    if (index > 25) return 0;
+    return index;
 }
 
 function getTrackPlayableNoteCount(track) {
