@@ -2,7 +2,7 @@
 // @name         YNOproject Yume2kki Performer
 // @name:zh-CN   YNOproject Yume2kki 演奏家
 // @namespace    https://github.com/Exsper/
-// @version      0.0.2
+// @version      0.0.3
 // @description  Music can be played automatically based on the given score.
 // @description:zh-CN  可以根据给定乐谱自动演奏乐曲。
 // @author       Exsper
@@ -19,7 +19,7 @@
 const Same_Time_Interval = 40;
 // 在低于最低音调（C3）多少半音的音符用最低音调弹奏，再低则忽略该音符
 const Allow_Exceed_Range_low = 2;
-// 在高于最高音调（B5）多少半音的音符用最高音调弹奏，再高则忽略该音符
+// 在高于最高音调（C5）多少半音的音符用最高音调弹奏，再高则忽略该音符
 const Allow_Exceed_Range_high = 2;
 
 // 语言资源
@@ -40,7 +40,7 @@ const locales = {
         conflictAll: "全部弹奏",
         conflictHigh: "取高音",
         conflictLow: "取低音",
-        conflictMiddle: "取接近F4的音",
+        conflictMiddle: "取接近C4的音",
         tableTrack: "演奏音轨",
         tablePlayableCount: "可演奏音符数",
         tablePlayableLength: "可演奏长度",
@@ -63,7 +63,7 @@ const locales = {
         conflictAll: "Play all",
         conflictHigh: "Higher pitch",
         conflictLow: "Lower pitch",
-        conflictMiddle: "Nearest to F4",
+        conflictMiddle: "Nearest to C4",
         tableTrack: "Track",
         tablePlayableCount: "Playable notes",
         tablePlayableLength: "Playable length",
@@ -914,12 +914,12 @@ function ReadMIDIInfo() {
 
 function MIDI2Song(trackIndexs, keyConflictMethod = "all") {
     function approximateIndexToKey(index) {
-        index = index - 59;
-        if (index <= -12 - Allow_Exceed_Range_low) return 0;
-        if (index >= 25 + Allow_Exceed_Range_high) return 0;
-        if (index <= -12) return 1;
-        if (index >= 25) return 36;
-        return index + 12;
+        index = index - 47;  // midi file: C3=48; script key: C3=1; script range: 1~25
+        if (index < 1 - Allow_Exceed_Range_low) return 0;
+        if (index > 25 + Allow_Exceed_Range_high) return 0;
+        if (index < 1) return 1;
+        if (index > 25) return 25;
+        return index;
     }
 
     if (!midiData) return null;
@@ -973,8 +973,8 @@ function MIDI2Song(trackIndexs, keyConflictMethod = "all") {
                         if (key >= lastKey) continue;
                     }
                     else if (keyConflictMethod === "middle") {
-                        // 取靠近F4的音
-                        if (Math.abs(key - 18) >= Math.abs(lastKey - 18)) continue;
+                        // 取靠近C4的音
+                        if (Math.abs(key - 13) >= Math.abs(lastKey - 13)) continue;
                     }
                     // 删除上一个key
                     let _lastInterval = intervalList.pop();
