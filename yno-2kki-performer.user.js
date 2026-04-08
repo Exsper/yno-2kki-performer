@@ -2,7 +2,7 @@
 // @name         YNOproject Yume2kki Performer
 // @name:zh-CN   YNOproject Yume2kki 演奏家
 // @namespace    https://github.com/Exsper/
-// @version      0.0.5
+// @version      0.0.6
 // @description  Music can be played automatically based on the given score.
 // @description:zh-CN  可以根据给定乐谱自动演奏乐曲。
 // @author       Exsper
@@ -216,7 +216,6 @@ async function playSong(song, bpm) {
 
         if (stopped) break;
 
-        let nextKey = "";
         if (i < keys.length - 1) nextKey = getKeyData(keys[i + 1]);
         else nextKey = getKeyData(keys[0]);
 
@@ -1018,27 +1017,27 @@ function indexToKey(index) {
     return index;
 }
 
-function getTrackPlayableNoteCount(track) {
+function getTrackPlayableNoteCount(track, dp = 0) {
     let playableCount = 0;
     for (let i = 0; i < track.notes.length; i++) {
-        if (indexToKey(track.notes[i].midi) !== 0) playableCount += 1;
+        if (indexToKey(track.notes[i].midi + dp) !== 0) playableCount += 1;
     }
     return playableCount;
 }
 
-function getTrackPlayableNoteLength(track) {
+function getTrackPlayableNoteLength(track, dp = 0) {
     let playableLength = 0;
     for (let i = 0; i < track.notes.length; i++) {
-        if (indexToKey(track.notes[i].midi) !== 0) playableLength += track.notes[i].durationTicks;
+        if (indexToKey(track.notes[i].midi + dp) !== 0) playableLength += track.notes[i].durationTicks;
     }
     return playableLength;
 }
 
 // 检查轨道内音符可弹奏数，有大于20%的音符无法弹奏则舍弃掉该轨道
-function checkTrackPlayable(track) {
+function checkTrackPlayable(track, dp = 0) {
     let noteCount = track.notes.length;
     if (noteCount <= 0) return false;
-    let playableCount = getTrackPlayableNoteCount(track);
+    let playableCount = getTrackPlayableNoteCount(track, dp);
     if ((playableCount / noteCount) < 0.8) return false;
     return true;
 }
@@ -1050,15 +1049,16 @@ function checkKeyInSameScale(key1, key2) {
     return scale1 === scale2;
 }
 
-function ReadMIDIInfo() {
+function ReadMIDIInfo(dp = 0) {
+    dp = parseInt(dp) || 0;
     if (!midiData) return null;
 
     let midiJson = midiData.JSON();
     let midiInfo = [];
     for (let i = 0; i < midiJson.tracks.length; i++) {
-        let playableNoteCount = getTrackPlayableNoteCount(midiJson.tracks[i]);
-        let playableNoteLength = getTrackPlayableNoteLength(midiJson.tracks[i]);
-        let isPlayable = checkTrackPlayable(midiJson.tracks[i])
+        let playableNoteCount = getTrackPlayableNoteCount(midiJson.tracks[i], dp);
+        let playableNoteLength = getTrackPlayableNoteLength(midiJson.tracks[i], dp);
+        let isPlayable = checkTrackPlayable(midiJson.tracks[i], dp);
         midiInfo.push({ index: i, playableNoteCount, playableNoteLength, isPlayable });
     }
     midiInfo = midiInfo.filter((a) => a.isPlayable === true);
@@ -1066,7 +1066,7 @@ function ReadMIDIInfo() {
     return midiInfo;
 }
 
-function MIDI2Song(trackIndexs, keyConflictMethod = "all") {
+function MIDI2Song(trackIndexs, keyConflictMethod, dp = 0) {
     function approximateIndexToKey(index) {
         index = index - 47;  // midi file: C3=48; script key: C3=1; script range: 1~25
         if (index < 1 - Allow_Exceed_Range_low) return 0;
@@ -1101,7 +1101,7 @@ function MIDI2Song(trackIndexs, keyConflictMethod = "all") {
     for (let i = 0; i < mix.length; i++) {
         // 音符演奏长度一致，故不用考虑durationTicks
         let interval = mix[i].ticks * realTimePerTick + sameTimeOffsetSum - totalInterval;
-        let key = approximateIndexToKey(mix[i].midi);
+        let key = approximateIndexToKey(mix[i].midi + dp);
         if (key === 0) continue;
         if ((lastKey !== 0) && (interval < Same_Time_Interval)) {
             // 如果同时间、同音符，则舍弃
@@ -1160,8 +1160,9 @@ function MIDI2Song(trackIndexs, keyConflictMethod = "all") {
     return { intervalList, keyList, endWaitTime };
 }
 
-async function playMIDI(trackIndexs, keyConflictMethod = "all") {
-    let keyInfo = MIDI2Song(trackIndexs, keyConflictMethod);
+async function playMIDI(trackIndexs, keyConflictMethod, dp = 0) {
+    dp = parseInt(dp) || 0;
+    let keyInfo = MIDI2Song(trackIndexs, keyConflictMethod, dp);
     if (!keyInfo) {
         alert("不支持演奏该MIDI音乐");
         stopped = true;
@@ -1247,7 +1248,7 @@ function init() {
 
                 let $mainTable = $("#y2p-table");
                 $mainTable.empty();
-                let midiInfo = ReadMIDIInfo();
+                let midiInfo = ReadMIDIInfo($("#y2p-dp").val());
                 if (!midiInfo || midiInfo.length <= 0) {
                     alert(locales[currentLang].alertUnsupported);
                     return;
@@ -1282,6 +1283,11 @@ function init() {
     $("<br>").appendTo($mainDiv);
     $("<span>", { id: "y2p-dp-label", text: locales[currentLang].pitchLabel }).hide().appendTo($mainDiv);
     let $dpBox = $("<input>", { type: "text", id: "y2p-dp", val: "0", style: "width:30px;align-self:center;" }).hide().appendTo($mainDiv);
+    $dpBox.on("change", () => {
+        if ($("#y2p-select-type").val() === "midi" && midiData) {
+            $("#y2p-file").change();
+        }
+    });
     $("<br>").appendTo($mainDiv);
     $("<span>", { id: "y2p-bpm-label", text: locales[currentLang].bpmLabel }).appendTo($mainDiv);
     let $bpmBox = $("<input>", { type: "text", id: "y2p-bpm", val: "120", style: "width:30px;align-self:center;" }).appendTo($mainDiv);
@@ -1304,7 +1310,7 @@ function init() {
             $("#y2p-bpm-label").show();
             $("#y2p-bpm").show();
         }
-        if ($textTypeSelect.val() === "je") {
+        if ($textTypeSelect.val() === "je" || $textTypeSelect.val() === "midi") {
             $("#y2p-dp-label").show();
             $("#y2p-dp").show();
         }
@@ -1326,7 +1332,7 @@ function init() {
                 $checkedTrack.each((i, e) => {
                     tracks.push(parseInt(e.attributes["track"].value));
                 })
-                await playMIDI(tracks, keyConflictMethod);
+                await playMIDI(tracks, keyConflictMethod, $dpBox.val());
             }
             else {
                 let song = $songText.val();
@@ -1400,7 +1406,7 @@ function refreshUILanguage() {
         // 重新生成表格（类似 $file.on("change") 中的表格生成逻辑）
         let $mainTable = $("#y2p-table");
         $mainTable.empty();
-        let midiInfo = ReadMIDIInfo();
+        let midiInfo = ReadMIDIInfo($("#y2p-dp").val());
         if (midiInfo && midiInfo.length > 0) {
             let $ltr = $("<tr>", { style: "width:100%;" });
             let $ltd = $("<td>", { style: "width:30%" }).appendTo($ltr);
