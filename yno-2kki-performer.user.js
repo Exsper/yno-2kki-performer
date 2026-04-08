@@ -250,6 +250,8 @@ function JE2Song(text, dp = 0) {
     let pitch = 13;
     let song = [];
     const note = ["1", "#1", "2", "#2", "3", "4", "#4", "5", "#5", "6", "#6", "7"];
+    // 删除字符串尾多余的#和b，防止无限循环
+    text = text.replace(/[#b]+$/, "");
     if (text.length == 0) return "";
     while (n < text.length) {
         while (n < text.length) {
