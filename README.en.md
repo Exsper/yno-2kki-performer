@@ -16,7 +16,6 @@ Although it can simulate keyboard input, its functionality is limited to playing
 
 ### Standard Notation
 
-- Notes are separated by spaces.
 - Each note lasts for a quarter note (1/4 beat).
 - Pitch range: C3 ~ C5.
 - `0` indicates a rest.
@@ -25,6 +24,7 @@ Example score:
 
 ```text
 G4 0 0 0 0 0 G4 0 A#4 0 G#4 G4 0 F4 0 0 D#4 0 0 0 0 0 D#4 0 F4 0 0 C4 0 0 D4 0 G3 0 0 0
+（All spaces can be deleted）
 
 BPM: 240
 ```
@@ -53,3 +53,7 @@ BPM: 257
 ### MIDI
 
 Due to limitations of single‑key input and pitch range, only MIDI files that meet specific requirements can be played successfully.
+
+## Pitch adjustment
+
+You can adjust the overall pitch of JE Score and MIDI. Fill in the number to represent how many semitones to move, which must be an integer (positive number indicates pitch up).

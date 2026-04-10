@@ -2,7 +2,7 @@
 // @name         YNOproject Yume2kki Performer
 // @name:zh-CN   YNOproject Yume2kki 演奏家
 // @namespace    https://github.com/Exsper/
-// @version      0.0.6
+// @version      0.0.7
 // @description  Music can be played automatically based on the given score.
 // @description:zh-CN  可以根据给定乐谱自动演奏乐曲。
 // @author       Exsper
@@ -49,6 +49,10 @@ const locales = {
         tablePlayableCount: "可演奏音符数",
         tablePlayableLength: "可演奏长度",
         alertUnsupported: "不支持演奏该MIDI音乐",
+        alertInvalidNote: "无效的音符格式: ",
+        alertMidiOutOfRange: "MIDI 编号超出范围 (0-127): ",
+        alertUnableToParseNoSpace: "无法解析无空格的字符串: ",
+        alertParseFailed: "解析乐谱失败: ",
         langSwitchLabel: "语言: "
     },
     en: {
@@ -72,6 +76,10 @@ const locales = {
         tablePlayableCount: "Playable notes",
         tablePlayableLength: "Playable length",
         alertUnsupported: "This MIDI is not supported",
+        alertInvalidNote: "Invalid note format: ",
+        alertMidiOutOfRange: "MIDI number out of range (0-127): ",
+        alertUnableToParseNoSpace: "Unable to parse string without spaces: ",
+        alertParseFailed: "Failed to parse score: ",
         langSwitchLabel: "Language: "
     }
 };
@@ -118,75 +126,45 @@ function switch2TypeA() {
 
 /**
  * 音符与按键对应关系，返回按键数据
- * @param {*} code 
+ * @param {number | string} code 1=C3 2=C#3 ... 13=C4 ... 25=C5 0=停顿
  * @returns 当返回多个按键时，除了最后一个按键外，其余前面的按键均为长按按键，等待最后一个按键按下后松开前面所有按键
  */
 function getKeyData(code) {
+    code = parseInt(code);
     switch (code) {
-        case "1":
-        case "C3": return [sKeys.Down];
-        case "2":
-        case "Db3":
-        case "C#3": return [sKeys.Shift, sKeys.Down];
-        case "3":
-        case "D3": return [sKeys.Left];
-        case "4":
-        case "Eb3":
-        case "D#3": return [sKeys.Shift, sKeys.Left];
-        case "5":
-        case "E3": return [sKeys.Up];
-        case "6":
-        case "F3": return [sKeys.Right];
-        case "7":
-        case "Gb3":
-        case "F#3": return [sKeys.Shift, sKeys.Right];
-        case "8":
-        case "G3": return [sKeys.Z, sKeys.Down];
-        case "9":
-        case "Ab3":
-        case "G#3": return [sKeys.Z, sKeys.Shift, sKeys.Down];
-        case "10":
-        case "A3": return [sKeys.Z, sKeys.Left];
-        case "11":
-        case "Bb3":
-        case "A#3": return [sKeys.Z, sKeys.Shift, sKeys.Left];
-        case "12":
-        case "B3": return [sKeys.Z, sKeys.Up];
+        // C3
+        case 1: return [sKeys.Down];
+        case 2: return [sKeys.Shift, sKeys.Down];
+        case 3: return [sKeys.Left];
+        case 4: return [sKeys.Shift, sKeys.Left];
+        case 5: return [sKeys.Up];
+        case 6: return [sKeys.Right];
+        case 7: return [sKeys.Shift, sKeys.Right];
+        case 8: return [sKeys.Z, sKeys.Down];
+        case 9: return [sKeys.Z, sKeys.Shift, sKeys.Down];
+        case 10: return [sKeys.Z, sKeys.Left];
+        case 11: return [sKeys.Z, sKeys.Shift, sKeys.Left];
+        case 12: return [sKeys.Z, sKeys.Up];
 
-        case "13":
-        case "C4": return [sKeys.Z, sKeys.Right];
-        case "14":
-        case "Db4":
-        case "C#4": return [sKeys.X, sKeys.Shift, sKeys.Down];
-        case "15":
-        case "D4": return [sKeys.X, sKeys.Left];
-        case "16":
-        case "Eb4":
-        case "D#4": return [sKeys.X, sKeys.Shift, sKeys.Left];
-        case "17":
-        case "E4": return [sKeys.X, sKeys.Up];
-        case "18":
-        case "F4": return [sKeys.X, sKeys.Right];
-        case "19":
-        case "Gb4":
-        case "F#4": return [sKeys.X, sKeys.Shift, sKeys.Right];
-        case "20":
-        case "G4": return [sKeys.Z, sKeys.X, sKeys.Down];
-        case "21":
-        case "Ab4":
-        case "G#4": return [sKeys.Z, sKeys.X, sKeys.Shift, sKeys.Down];
-        case "22":
-        case "A4": return [sKeys.Z, sKeys.X, sKeys.Left];
-        case "23":
-        case "Bb4":
-        case "A#4": return [sKeys.Z, sKeys.X, sKeys.Shift, sKeys.Left];
-        case "24":
-        case "B4": return [sKeys.Z, sKeys.X, sKeys.Up];
+        // C4
+        case 13: return [sKeys.Z, sKeys.Right];
+        case 14: return [sKeys.X, sKeys.Shift, sKeys.Down];
+        case 15: return [sKeys.X, sKeys.Left];
+        case 16: return [sKeys.X, sKeys.Shift, sKeys.Left];
+        case 17: return [sKeys.X, sKeys.Up];
+        case 18: return [sKeys.X, sKeys.Right];
+        case 19: return [sKeys.X, sKeys.Shift, sKeys.Right];
+        case 20: return [sKeys.Z, sKeys.X, sKeys.Down];
+        case 21: return [sKeys.Z, sKeys.X, sKeys.Shift, sKeys.Down];
+        case 22: return [sKeys.Z, sKeys.X, sKeys.Left];
+        case 23: return [sKeys.Z, sKeys.X, sKeys.Shift, sKeys.Left];
+        case 24: return [sKeys.Z, sKeys.X, sKeys.Up];
 
-        case "25":
-        case "C5": return [sKeys.Z, sKeys.X, sKeys.Right];
+        // C5
+        case 25: return [sKeys.Z, sKeys.X, sKeys.Right];
 
-        case "0": return [];
+        // 停顿
+        case 0: return [];
         default: return [];
     }
 }
@@ -195,12 +173,17 @@ function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * 
+ * @param {Array<number> | Array<string> | string} song 
+ * @param {number} bpm 
+ */
 async function playSong(song, bpm) {
     let bpmnum = parseFloat(bpm);
     if (bpmnum <= 10 || bpmnum > 1200) bpmnum = 60;
     let interval = 60 / bpmnum * 1000;
-    let keys = song.split(" ");
-    if (keys.length == 0) return;
+    let keys = (song instanceof Array) ? song : song.trim().split(/\s+/);
+    if (keys.length <= 0) return;
     stopped = false;
     for (let i = 0; i < keys.length; i++) {
         let keyData = getKeyData(keys[i]);
@@ -212,33 +195,115 @@ async function playSong(song, bpm) {
 
         if (stopped) break;
 
-        await wait(interval / 2);
-
-        if (stopped) break;
-
-        if (i < keys.length - 1) nextKey = getKeyData(keys[i + 1]);
-        else nextKey = getKeyData(keys[0]);
-
-        await wait(interval / 2);
+        await wait(interval);
     }
     if (stopped) {
         $("#y2p-play").text(locales[currentLang].playBtn);
         return;
     }
-    if (isLoop) await playSong(song, bpm);
+    if (isLoop) await playSong(keys, bpm);
     else {
         stopped = true;
         $("#y2p-play").text(locales[currentLang].playBtn);
     }
 }
 
-// 测试用
-function testSong() {
-    let song = [];
-    for (let i = 1; i <= 25; i++) {
-        song.push(i.toString());
+/**
+ * 将音符名称（如 C4, D#3, F5）转换为 MIDI 编号
+ * @param {string} note - 音符名称，例如 "C4"
+ * @returns {number} MIDI 编号，范围 0-127
+ */
+function noteToMidi(note) {
+    // 匹配格式：字母 + 可选的 # 或 b + 一位或两位数字（八度）
+    const match = note.match(/^([A-Ga-g])([#b]?)(\d+)$/);
+    if (!match) throw new Error(`${locales[currentLang].alertInvalidNote} ${note}`);
+
+    let [, letter, accidental, octaveStr] = match;
+    const octave = parseInt(octaveStr, 10);
+    const base = letter.toUpperCase();
+
+    // 字母对应的半音偏移（基于 C=0）
+    const offsetMap = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+    let semiOffset = offsetMap[base];
+
+    // 处理升降号
+    if (accidental === '#') semiOffset++;
+    else if (accidental === 'b') semiOffset--;
+
+    // MIDI 编号公式：C0 = 12，C4 = 60
+    // MIDI = 12 * (octave + 1) + semiOffset
+    const midi = 12 * (octave + 1) + semiOffset;
+
+    // 检查范围（可选，MIDI 标准 0-127）
+    if (midi < 0 || midi > 127) {
+        throw new Error(`${locales[currentLang].alertMidiOutOfRange} (0-127): ${note} -> ${midi}`);
     }
-    playSong(song.join(" "), 120);
+    return midi;
+}
+
+/**
+ * 解析乐谱字符串，返回音符编号数组
+ * @param {string} scoreStr - 乐谱字符串，支持三种格式：
+ *   1. 带空格的 MIDI 编号，如 "48 0 50 51 0 0 53"
+ *   2. 带空格的音符名称，如 "C3 0 D3 D#3 0 0 F3"
+ *   3. 无空格的混合字符串，如 "C30D3D#300F3"
+ * @returns {number[]} 音符编号数组（0 表示停顿）
+ */
+function parseScore(scoreStr) {
+    if (typeof scoreStr !== 'string') {
+        return [];
+    }
+
+    let tokens = [];
+
+    // 情况1 & 2：包含空格，按空白字符分割
+    if (/\s/.test(scoreStr)) {
+        tokens = scoreStr.trim().split(/\s+/);
+    } 
+    // 情况3：无空格，按正则提取（音符或0）
+    else {
+        // 匹配：字母（可选#b）后跟一位数字，或者单独的0
+        const regex = /([A-Ga-g][#b]?\d)|0/g;
+        let match;
+        while ((match = regex.exec(scoreStr)) !== null) {
+            tokens.push(match[0]);
+        }
+        // 如果正则没有匹配到任何内容但字符串非空，说明格式有误
+        if (tokens.length === 0 && scoreStr.length > 0) {
+            throw new Error(`${locales[currentLang].alertUnableToParseNoSpace} ${scoreStr}`);
+        }
+    }
+
+    // 将每个 token 转换为数字
+    const result = [];
+    for (const token of tokens) {
+        if (token === '0') {
+            result.push(0);
+        } else if (/^\d+$/.test(token)) {
+            // 纯数字字符串，直接转为数字（MIDI 编号）
+            result.push(parseInt(token, 10));
+        } else {
+            // 否则视为音符名称，转换为 MIDI 编号
+            result.push(noteToMidi(token));
+        }
+    }
+    return result;
+}
+
+function scoreToSong(scoreStr) {
+    try {
+        let midiNumbers = parseScore(scoreStr);
+        // C3=>1
+        let songNumbers = midiNumbers.map(num => {
+            if (num === 0) return 0; // 停顿
+            else return num - 47;
+        });
+        return songNumbers;
+    }
+    catch (error) {
+        alert(`${locales[currentLang].alertParseFailed} ${error.message}`);
+        return "";
+    }
 }
 
 // ---------------------------------------------------------------------------------------
@@ -284,7 +349,7 @@ function JE2Song(text, dp = 0) {
             }
         }
     }
-    return song.join(" ");
+    return song;
 }
 
 // midi.js
@@ -1164,7 +1229,7 @@ async function playMIDI(trackIndexs, keyConflictMethod, dp = 0) {
     dp = parseInt(dp) || 0;
     let keyInfo = MIDI2Song(trackIndexs, keyConflictMethod, dp);
     if (!keyInfo) {
-        alert("不支持演奏该MIDI音乐");
+        alert(locales[currentLang].alertUnsupported);
         stopped = true;
         $("#y2p-play").text(locales[currentLang].playBtn);
         return;
@@ -1180,7 +1245,7 @@ async function playMIDI(trackIndexs, keyConflictMethod, dp = 0) {
 
         if (stopped) break;
 
-        let keyData = getKeyData(keyList[i].toString());
+        let keyData = getKeyData(keyList[i]);
         if (keyData.length > 0) {
             for (let j = 0; j < keyData.length; j++) {
                 window.simulateKeyboardInput(keyData[j].key, keyData[j].keyCode);
@@ -1337,6 +1402,7 @@ function init() {
             else {
                 let song = $songText.val();
                 if ($("#y2p-select-type").val() === "je") song = JE2Song(song, $dpBox.val());
+                else song = scoreToSong(song, $dpBox.val());
                 await playSong(song, $bpmBox.val());
             }
         }
