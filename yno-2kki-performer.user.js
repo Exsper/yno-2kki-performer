@@ -2,7 +2,7 @@
 // @name         YNOproject Yume2kki Performer
 // @name:zh-CN   YNOproject Yume2kki 演奏家
 // @namespace    https://github.com/Exsper/
-// @version      0.0.7
+// @version      0.0.8
 // @description  Music can be played automatically based on the given score.
 // @description:zh-CN  可以根据给定乐谱自动演奏乐曲。
 // @author       Exsper
@@ -53,7 +53,8 @@ const locales = {
         alertMidiOutOfRange: "MIDI 编号超出范围 (0-127): ",
         alertUnableToParseNoSpace: "无法解析无空格的字符串: ",
         alertParseFailed: "解析乐谱失败: ",
-        langSwitchLabel: "语言: "
+        langSwitchLabel: "语言: ",
+        randomSong: "随机生成乐谱"
     },
     en: {
         openTitle: "Show Panel",
@@ -80,7 +81,8 @@ const locales = {
         alertMidiOutOfRange: "MIDI number out of range (0-127): ",
         alertUnableToParseNoSpace: "Unable to parse string without spaces: ",
         alertParseFailed: "Failed to parse score: ",
-        langSwitchLabel: "Language: "
+        langSwitchLabel: "Language: ",
+        randomSong: "Generate Random Score"
     }
 };
 
@@ -259,7 +261,7 @@ function parseScore(scoreStr) {
     // 情况1 & 2：包含空格，按空白字符分割
     if (/\s/.test(scoreStr)) {
         tokens = scoreStr.trim().split(/\s+/);
-    } 
+    }
     // 情况3：无空格，按正则提取（音符或0）
     else {
         // 匹配：字母（可选#b）后跟一位数字，或者单独的0
@@ -304,6 +306,111 @@ function scoreToSong(scoreStr) {
         alert(`${locales[currentLang].alertParseFailed} ${error.message}`);
         return "";
     }
+}
+
+// ---------------------------------------------------------------------------------------
+// 随机生成乐谱 
+
+/**
+ * 按流行乐规律随机生成一段乐谱（均为 1/4 长度）
+ * @param {number} length 音符个数（每个代表一个四分音符）
+ * @returns {number[]} midi序号数组，0表示停顿，数值范围48-72（C3-C5）
+ */
+function generatePopMelody(length = 16) {
+    // 五声音阶（C, D, E, G, A）覆盖 C3 到 C5
+    const pentatonic = [48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72];
+    // 起始音候选（C4, D4, E4, G4, A4）及其权重
+    const startNotes = [60, 62, 64, 67, 69];
+    const startWeights = [0.4, 0.2, 0.2, 0.1, 0.1];
+
+    // 辅助：加权随机选择
+    function weightedRandom(items, weights) {
+        let total = weights.reduce((a, b) => a + b, 0);
+        let rand = Math.random() * total;
+        let accum = 0;
+        for (let i = 0; i < items.length; i++) {
+            accum += weights[i];
+            if (rand < accum) return items[i];
+        }
+        return items[items.length - 1];
+    }
+
+    // 根据当前音高生成下一个音符的候选权重
+    function getCandidatesAndWeights(currentPitch, prevWasRest) {
+        let candidates = [0];          // 0 表示休止
+        let weights = [];
+
+        // 休止符权重（避免连续休止）
+        if (!prevWasRest) {
+            candidates.push(0);
+            weights.push(0.1);
+        } else {
+            weights.push(0); // 连续休止不允许
+        }
+
+        // 添加五声音阶中的音
+        for (let note of pentatonic) {
+            candidates.push(note);
+            let dist = Math.abs(note - currentPitch);
+            let w = 0;
+            if (dist === 0) w = 0.8;          // 同音重复
+            else if (dist <= 3) w = 1.0;      // 级进或小跳（2-3半音）
+            else if (dist <= 5) w = 0.5;      // 中跳（4-5半音）
+            else if (dist <= 8) w = 0.2;      // 大跳（6-8半音）
+            // 超过8半音的大跳在流行旋律中很少，权重为0
+            weights.push(w);
+        }
+        return { candidates, weights };
+    }
+
+    let melody = [];
+    let lastPitch = null;     // 上一个非休止的音高
+    let prevWasRest = false;  // 上一个音符是否为休止
+
+    for (let i = 0; i < length; i++) {
+        let nextNote;
+        if (lastPitch === null) {
+            // 第一个音符：从起始候选里加权选择
+            nextNote = weightedRandom(startNotes, startWeights);
+        } else {
+            // 根据当前音高生成候选及权重
+            let { candidates, weights } = getCandidatesAndWeights(lastPitch, prevWasRest);
+            // 过滤掉权重为0的项
+            let filtered = [];
+            let filteredWeights = [];
+            for (let idx = 0; idx < candidates.length; idx++) {
+                if (weights[idx] > 0) {
+                    filtered.push(candidates[idx]);
+                    filteredWeights.push(weights[idx]);
+                }
+            }
+            if (filtered.length === 0) {
+                // 降级：允许任何五声音阶内的音（避免死循环）
+                nextNote = pentatonic[Math.floor(Math.random() * pentatonic.length)];
+            } else {
+                nextNote = weightedRandom(filtered, filteredWeights);
+            }
+        }
+
+        melody.push(nextNote);
+        if (nextNote === 0) {
+            prevWasRest = true;
+            // lastPitch 保持不变
+        } else {
+            lastPitch = nextNote;
+            prevWasRest = false;
+        }
+    }
+
+    return melody;
+}
+
+function midiToNoteName(midi) {
+    if (midi === 0) return '0';
+    const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const octave = Math.floor(midi / 12) - 1;
+    const note = notes[midi % 12];
+    return `${note}${octave}`;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -622,8 +729,8 @@ class mtrk {
      */
     sort() {
         this.events.sort((a, b) => {
-            if(a.ticks == b.ticks) {
-                if(a.code == b.code && a.code == 9) return a.value[1] - b.value[1];
+            if (a.ticks == b.ticks) {
+                if (a.code == b.code && a.code == 9) return a.value[1] - b.value[1];
                 return b.code - a.code;
             } return a.ticks - b.ticks;
         });
@@ -669,10 +776,10 @@ class mtrk {
     JSON(track_id) {
         this.sort();
         const Notes = [],
-              controls = [],
-              Instruments = [],
-              Tempos = [],
-              TimeSignatures = [];
+            controls = [],
+            Instruments = [],
+            Tempos = [],
+            TimeSignatures = [];
         for (let i = 0; i < this.events.length; i++) {
             let temp = this.events[i];
             switch (temp.code) {
@@ -863,7 +970,7 @@ class midi {
                                     case 0x21:
                                         midiPort = midi_file[i + 1];
                                         break;
-                                //== 不break，进入default添加事件。所以这后面的都要加`if(timeline == 0)`保证能到default ==//
+                                    //== 不break，进入default添加事件。所以这后面的都要加`if(timeline == 0)`保证能到default ==//
                                     case 0x58:
                                         if (timeline == 0) {
                                             newmidi.time_signature = [midi_file[i + 1], 1 << midi_file[i + 2]];
@@ -1346,6 +1453,13 @@ function init() {
     $file.hide();
     let $songText = $("<textarea>", { id: "y2p-song", style: "min-height: 80px;" }).appendTo($mainDiv);
     $("<br>").appendTo($mainDiv);
+    let $randomSongButton = $('<button>', { type: "button", text: locales[currentLang].randomSong, id: "y2p-random", style: "width:fit-content;align-self:center;" }).appendTo($mainDiv);
+    $randomSongButton.click(() => {
+        const myMelody = generatePopMelody(32);  // 生成32个四分音符
+        let randomSong = myMelody.map(midiToNoteName).join("");
+        $songText.val(randomSong);
+    });
+    $("<br>").appendTo($mainDiv);
     $("<span>", { id: "y2p-dp-label", text: locales[currentLang].pitchLabel }).hide().appendTo($mainDiv);
     let $dpBox = $("<input>", { type: "text", id: "y2p-dp", val: "0", style: "width:30px;align-self:center;" }).hide().appendTo($mainDiv);
     $dpBox.on("change", () => {
@@ -1355,7 +1469,7 @@ function init() {
     });
     $("<br>").appendTo($mainDiv);
     $("<span>", { id: "y2p-bpm-label", text: locales[currentLang].bpmLabel }).appendTo($mainDiv);
-    let $bpmBox = $("<input>", { type: "text", id: "y2p-bpm", val: "120", style: "width:30px;align-self:center;" }).appendTo($mainDiv);
+    let $bpmBox = $("<input>", { type: "text", id: "y2p-bpm", val: "240", style: "width:30px;align-self:center;" }).appendTo($mainDiv);
     $textTypeSelect.on("change", () => {
         if ($textTypeSelect.val() === "midi") {
             $("#y2p-file").show();
@@ -1378,10 +1492,12 @@ function init() {
         if ($textTypeSelect.val() === "je" || $textTypeSelect.val() === "midi") {
             $("#y2p-dp-label").show();
             $("#y2p-dp").show();
+            $("#y2p-random").hide();
         }
         else {
             $("#y2p-dp-label").hide();
             $("#y2p-dp").hide();
+            $("#y2p-random").show();
         }
     });
     $("<br>").appendTo($mainDiv);
@@ -1457,6 +1573,7 @@ function refreshUILanguage() {
     $("#y2p-dp-label").text(locales[currentLang].pitchLabel);
     $("#y2p-bpm-label").text(locales[currentLang].bpmLabel);
     $("label[for='y2p-loop']").text(locales[currentLang].loopLabel);
+    $("#y2p-random").text(locales[currentLang].randomSong);
     $("#y2p-play").text(locales[currentLang].playBtn);
     $("#y2p-select-conflict-label").text(locales[currentLang].conflictLabel);
     $("#y2p-select-conflict option").each(function () {
